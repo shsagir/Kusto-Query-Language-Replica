@@ -1,3 +1,16 @@
+---
+title: sql_request plugin - Azure Data Explorer | Microsoft Docs
+description: This article describes sql_request plugin in Azure Data Explorer.
+services: data-explorer
+author: orspod
+ms.author: orspodek
+ms.reviewer: rkarlin
+ms.service: data-explorer
+ms.topic: reference
+ms.date: 02/24/2020
+zone_pivot_group_filename: data-explorer/zone-pivot-groups.json
+zone_pivot_groups: kql-flavors
+---
 # sql_request plugin
 
 ::: zone pivot="azuredataexplorer"
@@ -35,8 +48,7 @@ data in this manner. It's usually preferable that SQL queries will be constructe
 to return the smallest data set possible, as currently the Kusto optimizer
 does not attempt to optimize queries between Kusto and SQL.
 
-<!-- csl -->
-```
+```kusto
 evaluate sql_request(
   'Server=tcp:contoso.database.windows.net,1433;'
     'Authentication="Active Directory Integrated";'
@@ -50,14 +62,29 @@ The following example is identical to the previous one, except that SQL
 authentication is done by username/password. Note that for confidentiality,
 we use obfuscated strings here.
 
-<!-- csl -->
-```
+```kusto
 evaluate sql_request(
   'Server=tcp:contoso.database.windows.net,1433;'
     'Initial Catalog=Fabrikam;'
     h'User ID=USERNAME;'
     h'Password=PASSWORD;',
   'select * from [dbo].[Table]')
+| where Id > 0
+| project Name
+```
+
+The following example sends a SQL query to an Azure SQL DB database
+retrieving all records from `[dbo].[Table]`, while appending another `datetime` column,
+and then processes the results on the Kusto side.
+It specifies a SQL parameter (`@param0`) to be used in the SQL query.
+
+```kusto
+evaluate sql_request(
+  'Server=tcp:contoso.database.windows.net,1433;'
+    'Authentication="Active Directory Integrated";'
+    'Initial Catalog=Fabrikam;',
+  'select *, @param0 as dt from [dbo].[Table]',
+  dynamic({'param0': datetime(2020-01-01 16:47:26.7423305)}))
 | where Id > 0
 | project Name
 ```
@@ -120,10 +147,11 @@ Where:
 > do so when using the SQL client libraries programmatically.
 
 
+
 ::: zone-end
 
 ::: zone pivot="azuremonitor"
 
-This isn't supported in Azure Monitor
+This capability isn't supported in Azure Monitor
 
 ::: zone-end

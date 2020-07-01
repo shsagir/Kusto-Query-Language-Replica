@@ -1,3 +1,14 @@
+---
+title: Samples - Azure Data Explorer
+description: This article describes Samples in Azure Data Explorer.
+services: data-explorer
+author: orspod
+ms.author: orspodek
+ms.reviewer: rkarlin
+ms.service: data-explorer
+ms.topic: reference
+ms.date: 02/13/2020
+---
 # Samples
 
 Below are a few common query needs and how the Kusto query language can be used
@@ -8,7 +19,7 @@ to meet them.
 Project two or more columns and use them as the x and y axis of a chart:
 
 <!-- csl: https://help.kusto.windows.net/Samples  -->
-``` 
+```kusto 
 StormEvents
 | where isnotempty(EndLocation) 
 | summarize event_count=count() by EndLocation
@@ -20,9 +31,8 @@ StormEvents
 * Use `where`, `summarize` and `top` to limit the volume of data that you display.
 * Sort the results so as to define the order of the x-axis.
 
-![alt text](./Images/samples/060.png "060")
+:::image type="content" source="images/samples/060.png" alt-text="060":::
 
-<a name="activities"></a>
 ## Get sessions from start and stop events
 
 Let's suppose we have a log of events, in which some events mark the start or end of an extended activity or session. 
@@ -38,8 +48,7 @@ Let's suppose we have a log of events, in which some events mark the start or en
 
 Every event has an SessionId, so the problem is to match up the start and stop events with the same id.
 
-<!-- csl -->
-```
+```kusto
 let Events = MyLogTable | where ... ;
 
 Events
@@ -65,8 +74,7 @@ Use [`let`](./letstatement.md) to name a projection of the table that is pared d
 
 Now let's suppose that the start and stop events don't conveniently have a session id that we can match on. But we do have an IP address of the client where the session took place. Assuming each client address only conducts one session at a time, we can match each start event to the next stop event from the same IP address.
 
-<!-- csl -->
-```
+```kusto
 Events 
 | where Name == "Start" 
 | project City, ClientIp, StartTime = timestamp
@@ -88,10 +96,9 @@ Then we group by start time and ip to get a group for each session. We must supp
 
 `arg_min` picks out the row with the smallest duration in each group, and the `*` parameter passes through all the other columns, though it prefixes "min_" to each column name. 
 
+:::image type="content" source="images/samples/040.png" alt-text="040"::: 
 
-![alt text](./images/samples/040.png "040") 
-
-Then we can add some code to count the durations in conveniently-sized bins. We've a slight preference for a bar chart, so we divide by `1s` to convert the timespans to numbers. 
+Then we can add some code to count the durations in conveniently sized bins. We've a slight preference for a bar chart, so we divide by `1s` to convert the timespans to numbers. 
 
 
       // Count the frequency of each duration:
@@ -101,14 +108,11 @@ Then we can add some code to count the durations in conveniently-sized bins. We'
       // Display in a bar chart:
     | sort by duration asc | render barchart 
 
-
-![alt text](./images/samples/050.png "050") 
-
+:::image type="content" source="images/samples/050.png" alt-text="050":::
 
 ### Real example
 
-<!-- csl -->
-```
+```kusto
 Logs  
 | filter ActivityId == "ActivityId with Blablabla" 
 | summarize max(Timestamp), min(Timestamp)  
@@ -175,7 +179,6 @@ on UnitOfWorkId
 | extend SaveFactor = sum_NormalizedLoad / sum_CurrentLoad 
 ```
 
-<a name="concurrent-activities"><a/>
 ## Chart concurrent sessions over time
 
 Suppose we have a table of activities with their start and end times.  We'd like to see a chart over time that shows how many are running concurrently at any time.
@@ -192,8 +195,7 @@ We want a chart in 1-minute bins, so we want to create something that, at each 1
 
 Here's an intermediate result:
 
-<!-- csl -->
-```
+```kusto
 X | extend samples = range(bin(StartTime, 1m), StopTime, 1m)
 ```
 
@@ -207,8 +209,7 @@ X | extend samples = range(bin(StartTime, 1m), StopTime, 1m)
 
 But instead of keeping those arrays, we'll expand them using [mv-expand](./mvexpandoperator.md):
 
-<!-- csl -->
-```
+```kusto
 X | mv-expand samples = range(bin(StartTime, 1m), StopTime , 1m)
 ```
 
@@ -227,8 +228,7 @@ X | mv-expand samples = range(bin(StartTime, 1m), StopTime , 1m)
 
 We can now group these by sample time, counting the occurrences of each activity:
 
-<!-- csl -->
-```
+```kusto
 X
 | mv-expand samples = range(bin(StartTime, 1m), StopTime , 1m)
 | summarize count(SessionId) by bin(todatetime(samples),1m)
@@ -255,8 +255,7 @@ When the `summarize` operator is applied over a group key that consists of a
 `datetime` column, one normally "bins" those values to fixed-width bins.
 For example:
 
-<!-- csl -->
-```
+```kusto
 let StartTime=ago(12h);
 let StopTime=now()
 T
@@ -273,8 +272,7 @@ no corresponding row in `T`.
 Often, it is desired to "pad" the table with those bins. Here's one way to do
 it:
 
-<!-- csl -->
-```
+```kusto
 let StartTime=ago(12h);
 let StopTime=now()
 T
@@ -300,7 +298,7 @@ Here's a step-by-step explanation of the query above:
 4. All with a `Count` of `0`.
 5. Last, we use the `summarize` operator to group-together bins from the original
    (left, or outer) argument to `union` and bins from the inner argument to it
-   (namely, the null bin rows). This ensure that the output has one row per bin,
+   (namely, the null bin rows). This ensures that the output has one row per bin,
    whose value is either zero or the original count.  
 
 ## Get more out of your data in Kusto using Machine Learning 
@@ -309,8 +307,7 @@ There are many interesting use cases for leveraging machine learning algorithms 
 
 Our journey starts with looking for anomalies in the error rate of a specific Bing Inferences service. The Logs table has 65B records, and the simple query below filters 250K errors, and creates a time series data of errors count that utilizes anomaly detection function [series_decompose_anomalies](series-decompose-anomaliesfunction.md). The anomalies are detected by the Kusto service, and are highlighted as red dots on the time series chart.
 
-<!-- csl -->
-```
+```kusto
 Logs
 | where Timestamp >= datetime(2015-08-22) and Timestamp < datetime(2015-08-23) 
 | where Level == "e" and Service == "Inferences.UnusualEvents_Main" 
@@ -318,10 +315,9 @@ Logs
 | render anomalychart 
 ```
 
-The service identified few time buckets with suspicious error rate. I'm using Kusto to zoom into this time frame, running a query that aggregates on the â€˜Message' column trying to look for the top errors. I've trimmed the relevant parts out of the entire stack trace of the message to better fit into the page. You can see that I had nice success with the top eight errors, but then reached a long tail of errors since the error message was created by a format string that contained changing data. 
+The service identified few time buckets with suspicious error rate. I'm using Kusto to zoom into this time frame, running a query that aggregates on the ‘Message' column trying to look for the top errors. I've trimmed the relevant parts out of the entire stack trace of the message to better fit into the page. You can see that I had nice success with the top eight errors, but then reached a long tail of errors since the error message was created by a format string that contained changing data. 
 
-<!-- csl -->
-```
+```kusto
 Logs
 | where Timestamp >= datetime(2015-08-22 05:00) and Timestamp < datetime(2015-08-22 06:00)
 | where Level == "e" and Service == "Inferences.UnusualEvents_Main"
@@ -345,8 +341,7 @@ Logs
 
 This is where the `reduce` operator comes to help. The `reduce` operator identified 63 different errors as originated by the same trace instrumentation point in the code, and helped me focus on additional meaningful error trace in that time window.
 
-<!-- csl -->
-```
+```kusto
 Logs
 | where Timestamp >= datetime(2015-08-22 05:00) and Timestamp < datetime(2015-08-22 06:00)
 | where Level == "e" and Service == "Inferences.UnusualEvents_Main"
@@ -368,8 +363,7 @@ Logs
 
 Now that I have a good view into the top errors that contributed to the detected anomalies, I want to understand the impact of these errors across my system. The 'Logs' table contains additional dimensional data such as 'Component', 'Cluster', etc... The new 'autocluster' plugin can help me derive that insight with a simple query. In this example below, I can clearly see that each of the top four errors is specific to a component, and while the top three errors are specific to DB4 cluster, the fourth one happens across all clusters.
 
-<!-- csl -->
-```
+```kusto
 Logs
 | where Timestamp >= datetime(2015-08-22 05:00) and Timestamp < datetime(2015-08-22 06:00)
 | where Level == "e" and Service == "Inferences.UnusualEvents_Main"
@@ -386,7 +380,7 @@ Logs
 ## Mapping values from one set to another
 
 A common use-case is using static mapping of values that can help in adopting results into more presentable way.  
-For example, consider having next table. DeviceModel  specifies a model of the device, which is not a very convenient form of referencing to the device name.â€¯ 
+For example, consider having next table. DeviceModel  specifies a model of the device, which is not a very convenient form of referencing to the device name.  
 
 
 |DeviceModel |Count 
@@ -396,7 +390,7 @@ For example, consider having next table. DeviceModel  specifies a model of the d
 |iPhone7,2 |55 
 |iPhone5,2 |66 
 
-â€¯ 
+  
 A better representation may be:  
 
 |FriendlyName |Count 
@@ -406,14 +400,14 @@ A better representation may be:
 |iPhone 6 |55 
 |iPhone5 |66 
 
-The two approaches below demonstrate how this can be achieved.â€¯ 
+The two approaches below demonstrate how this can be achieved.  
 
 ### Mapping using dynamic dictionary
 
 The approach below shows how the mapping can be achieved using a dynamic dictionary and dynamic accessors.
 
 <!-- csl: https://help.kusto.windows.net:443/Samples -->
-```
+```kusto
 // Data set definition
 let Source = datatable(DeviceModel:string, Count:long)
 [
@@ -449,8 +443,7 @@ The approach below shows how the mapping can be achieved using a persistent tabl
  
 Create the mapping table (just once):
 
-<!-- csl -->
-```
+```kusto
 .create table Devices (DeviceModel: string, FriendlyName: string) 
 
 .ingest inline into table Devices 
@@ -461,16 +454,15 @@ Content of Devices now:
 
 |DeviceModel |FriendlyName 
 |---|---
-|iPhone5,1 |iPhoneâ€¯5 
-|iPhone3,2 |iPhoneâ€¯4 
-|iPhone7,2 |iPhoneâ€¯6 
+|iPhone5,1 |iPhone 5 
+|iPhone3,2 |iPhone 4 
+|iPhone7,2 |iPhone 6 
 |iPhone5,2 |iPhone5 
 
 
 Same trick for creating test table Source:
 
-<!-- csl -->
-```
+```kusto
 .create table Source (DeviceModel: string, Count: int)
 
 .ingest inline into table Source ["iPhone5,1",32]["iPhone3,2",432]["iPhone7,2",55]["iPhone5,2",66]
@@ -479,8 +471,7 @@ Same trick for creating test table Source:
 
 Join and project:
 
-<!-- csl -->
-```
+```kusto
 Devices  
 | join (Source) on DeviceModel  
 | project FriendlyName, Count
@@ -490,9 +481,9 @@ Result:
 
 |FriendlyName |Count 
 |---|---
-|iPhoneâ€¯5 |32 
-|iPhoneâ€¯4 |432 
-|iPhoneâ€¯6 |55 
+|iPhone 5 |32 
+|iPhone 4 |432 
+|iPhone 6 |55 
 |iPhone5 |66 
 
 
@@ -503,7 +494,7 @@ table that is not stored in the database. It is possible to define an expression
 whose result is a table scoped to a single query by doing something like this:
 
 <!-- csl: https://help.kusto.windows.net/Samples -->
-```
+```kusto
 // Create a query-time dimension table using datatable
 let DimTable = datatable(EventType:string, Code:string)
   [
@@ -518,8 +509,7 @@ DimTable
 
 Here's a slightly more complex example:
 
-<!-- csl -->
-```
+```kusto
 // Create a query-time dimension table using datatable
 let TeamFoundationJobResult = datatable(Result:int, ResultString:string)
   [
@@ -549,8 +539,7 @@ column, where "latest" is defined as "having the highest value of `timestamp`".
 This can be done using the [top-nested operator](topnestedoperator.md).
 First we provide the query, and then we'll explain it:
 
-<!-- csl -->
-```
+```kusto
 datatable(id:string, timestamp:datetime, bla:string)           // (1)
   [
   "Barak",  datetime(2015-01-01), "1",
@@ -603,8 +592,7 @@ and then divide each value of this column by the total. It is possible to do
 so for arbitrary results by giving these results a name using the
 [as operator](asoperator.md):
 
-<!-- csl -->
-```
+```kusto
 // The following table literal represents a long calculation
 // that ends up with an anonymous tabular value:
 datatable (SomeInt:int, SomeSeries:string) [
@@ -640,9 +628,9 @@ Fruits table:
 |2018-10-06 08:00:00.0000000|Plums|8|
 |2018-10-07 12:00:00.0000000|Bananas|0|
 
-Sliding window aggreation query (explanation is provided below query results): 
+Sliding window aggregation query (explanation is provided below query results): 
 
-```
+```kusto
 let _start = datetime(2018-09-24);
 let _end = _start + 13d; 
 Fruits 
@@ -694,10 +682,10 @@ Step-by-step explanation (numbers refer to the numbers in query inline comments)
 ## Find preceding event
 The next example demonstrates how to find a preceding event between 2 data sets.  
 
-*Purpose:* : Given 2 data sets, A and B, for each record in B find its preceding event in A (in other words, the arg_max record in A which is still â€œolderâ€ than B). 
+*Purpose:* : Given 2 data sets, A and B, for each record in B find its preceding event in A (in other words, the arg_max record in A which is still “older” than B). 
 For instance, below is the expected output for the following sample data sets: 
 
-```
+```kusto
 let A = datatable(Timestamp:datetime, Id:string, EventA:string)
 [
     datetime(2019-01-01 00:00:00), "x", "Ax1",
@@ -749,7 +737,7 @@ There are 2 different approaches suggested for this problem. You should test bot
 This suggestion serializes both data sets by Id and timestamp, then groups all B events with all their preceding A events,
  and picks the `arg_max` out of all As in the group. 
 
-```
+```kusto
 A
 | extend A_Timestamp = Timestamp, Kind="A"
 | union (B | extend B_Timestamp = Timestamp, Kind="B")
@@ -763,12 +751,12 @@ A
 ```
 
 ### Suggestion #2:
-This suggestion requires defining a max-lookback-period (how much â€œolderâ€ do we allow the record in A to be compared to B?) and then joins the 2 data sets on Id and this lookback period. The join produces all possible candidates (all A records which are older than B and within the lookback period), and we then filter the closest one to 
-B by arg_min(TimestampB â€“ TimestampA). The smaller the lookback period is, the query is expected to perform better. 
+This suggestion requires defining a max-lookback-period (how much “older” do we allow the record in A to be compared to B?) and then joins the 2 data sets on Id and this lookback period. The join produces all possible candidates (all A records which are older than B and within the lookback period), and we then filter the closest one to 
+B by arg_min(TimestampB – TimestampA). The smaller the lookback period is, the query is expected to perform better. 
 
 In the example below, the lookback period is set to 1m, and therefore record with Id 'z' does not have a corresponding 'A' event (since it's 'A' is older by 2m).
 
-```
+```kusto
 let _maxLookbackPeriod = 1m;  
 let _internalWindowBin = _maxLookbackPeriod / 2;
 let B_events = B 

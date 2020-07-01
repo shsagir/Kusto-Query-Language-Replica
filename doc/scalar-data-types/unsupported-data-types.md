@@ -1,3 +1,14 @@
+---
+title: Unsupported scalar data types - Azure Data Explorer | Microsoft Docs
+description: This article describes Unsupported scalar data types in Azure Data Explorer.
+services: data-explorer
+author: orspod
+ms.author: orspodek
+ms.reviewer: rkarlin
+ms.service: data-explorer
+ms.topic: reference
+ms.date: 01/27/2020
+---
 # Unsupported scalar data types
 
 All undocumented **scalar data type** are considered unsupported in Kusto.

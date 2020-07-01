@@ -1,3 +1,16 @@
+---
+title: R plugin (Preview) - Azure Data Explorer | Microsoft Docs
+description: This article describes R plugin (Preview) in Azure Data Explorer.
+services: data-explorer
+author: orspod
+ms.author: orspodek
+ms.reviewer: rkarlin
+ms.service: data-explorer
+ms.topic: reference
+ms.date: 04/01/2020
+zone_pivot_group_filename: data-explorer/zone-pivot-groups.json
+zone_pivot_groups: kql-flavors
+---
 # R plugin (Preview)
 
 ::: zone pivot="azuredataexplorer"
@@ -6,6 +19,8 @@ The R plugin runs a user-defined-function (UDF) using an R script. The R script 
 The plugin's runtime is hosted in a [sandbox](../concepts/sandboxes.md), an isolated and secure environment running on the cluster's nodes.
 
 ### Syntax
+
+*T* `|` `evaluate` [`hint.distribution` `=` (`single` | `per_node`)] `r(`*output_schema*`,` *script* [`,` *script_parameters*]`)`
 
 
 ### Arguments
@@ -21,6 +36,7 @@ The plugin's runtime is hosted in a [sandbox](../concepts/sandboxes.md), an isol
     * `single`: A single instance of the script will run over the entire query data.
     * `per_node`: If the query before the R block is distributed, an instance of the script will run on each node over the data that it contains.
 
+
 ### Reserved R variables
 
 The following variables are reserved for interaction between Kusto Query Language and the R code:
@@ -32,19 +48,23 @@ The following variables are reserved for interaction between Kusto Query Languag
 
 ### Onboarding
 
+
 * The plugin is disabled by default.
     * *Interested in enabling the plugin on your cluster?*
+        
+        * In the Azure portal, within your Azure Data Explorer cluster, select **New support request** in the left-hand menu.
         * Disabling the plugin requires opening a support ticket as well.
 
 ### Notes and Limitations
 
 * The R sandbox image is based on *R 3.4.4 for Windows*, and includes packages from [Anaconda's R Essentials bundle](https://docs.anaconda.com/anaconda/packages/r-language-pkg-docs/).
 * The R sandbox limits accessing the network, therefore the R code can't dynamically install additional packages that are
+  not included in the image.Open a **New support request** in the Azure portal  if you need specific packages.
+
 
 ### Examples
 
-<!-- csl -->
-```
+```kusto
 range x from 1 to 360 step 1
 | evaluate r(
 //
@@ -60,9 +80,8 @@ typeof(*, fx:double),               //  Output schema: append a new fx column to
 )
 | render linechart 
 ```
-![alt text](./images/samples/sine-demo.png "sine-demo")
 
-
+:::image type="content" source="images/plugin/sine-demo.png" alt-text="Sine demo" border="false":::
 
 ### Performance tips
 
@@ -75,8 +94,7 @@ typeof(*, fx:double),               //  Output schema: append a new fx column to
 
     For example:
 
-    <!-- csl -->
-    ```    
+    ```kusto    
     .show operations
     | where StartedOn > ago(1d) // Filtering out irrelevant records before invoking the plugin
     | project d_seconds = Duration / 1s // Projecting only a subset of the necessary columns
@@ -97,11 +115,10 @@ typeof(*, fx:double),               //  Output schema: append a new fx column to
   
   For example:
 
-    <!-- csl -->
-    ```    
+    ```kusto    
     let script = 
         externaldata(script:string)
-        [h'https://raw.githubusercontent.com/yonileibowitz/kusto.blog/master/resources/R/sample_script.r']
+        [h'https://kustoscriptsamples.blob.core.windows.net/samples/R/sample_script.r']
         with(format = raw);
     range x from 1 to 360 step 1
     | evaluate r(
@@ -117,7 +134,7 @@ typeof(*, fx:double),               //  Output schema: append a new fx column to
 
 ::: zone pivot="azuremonitor"
 
-This isn't supported in Azure Monitor
+This capability isn't supported in Azure Monitor
 
 ::: zone-end
 

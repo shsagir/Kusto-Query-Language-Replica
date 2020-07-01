@@ -1,3 +1,16 @@
+---
+title: Python plugin - Azure Data Explorer | Microsoft Docs
+description: This article describes Python plugin in Azure Data Explorer.
+services: data-explorer
+author: orspod
+ms.author: orspodek
+ms.reviewer: rkarlin
+ms.service: data-explorer
+ms.topic: reference
+ms.date: 04/01/2020
+zone_pivot_group_filename: data-explorer/zone-pivot-groups.json
+zone_pivot_groups: kql-flavors
+---
 # Python plugin
 
 ::: zone pivot="azuredataexplorer"
@@ -40,7 +53,7 @@ The following variables are reserved for interaction between Kusto query languag
 
 * The plugin is disabled by default.
 * Prerequisites for enabling the plugin are listed [here](../concepts/sandboxes.md#prerequisites).
-* Enable or disable the plugin in the [Azure portal in the **Configuration** tab of your cluster](https://docs.microsoft.com/azure/data-explorer/language-extensions).
+* Enable or disable the plugin in the [Azure portal in the **Configuration** tab of your cluster](../../language-extensions.md).
 
 ## Notes and Limitations
 
@@ -56,12 +69,11 @@ The following variables are reserved for interaction between Kusto query languag
   * In both the above cases, it's recommended to verify that the volume and frequency of the ingestion, as well as the complexity and
     resources utilization of the Python logic are aligned with [sandbox limitations](../concepts/sandboxes.md#limitations), and the cluster's available resources.
     Failure to do so may result with [throttling errors](../concepts/sandboxes.md#errors).
-  * It is *not* possible to use the plugin in a query which is defined as part of an update policy, whose source table is ingested using [streaming ingestion](https://docs.microsoft.com/azure/data-explorer/ingest-data-streaming).
+  * It is *not* possible to use the plugin in a query which is defined as part of an update policy, whose source table is ingested using [streaming ingestion](../../ingest-data-streaming.md).
 
 ## Examples
 
-<!-- csl -->
-```
+```kusto
 range x from 1 to 360 step 1
 | evaluate python(
 //
@@ -78,10 +90,9 @@ typeof(*, fx:double),               //  Output schema: append a new fx column to
 | render linechart 
 ```
 
-![alt text](./images/samples/sine-demo.png "sine-demo")
+:::image type="content" source="images/plugin/sine-demo.png" alt-text="sine demo" border="false":::
 
-<!-- csl -->
-```
+```kusto
 print "This is an example for using 'external_artifacts'"
 | evaluate python(
     typeof(File:string, Size:string),
@@ -96,8 +107,8 @@ print "This is an example for using 'external_artifacts'"
     "result['Size'] = sizes\n"
     "\n",
     external_artifacts = 
-        dynamic({"this_is_my_first_file":"https://raw.githubusercontent.com/yonileibowitz/kusto.blog/master/resources/R/sample_script.r",
-                 "this_is_a_script":"https://raw.githubusercontent.com/yonileibowitz/kusto.blog/master/resources/python/sample_script.py"})
+        dynamic({"this_is_my_first_file":"https://kustoscriptsamples.blob.core.windows.net/samples/R/sample_script.r",
+                 "this_is_a_script":"https://kustoscriptsamples.blob.core.windows.net/samples/python/sample_script.py"})
 )
 ```
 
@@ -117,8 +128,7 @@ print "This is an example for using 'external_artifacts'"
 
     Example:
 
-    <!-- csl -->
-    ```    
+    ```kusto    
     .show operations
     | where StartedOn > ago(7d) // Filtering out irrelevant records before invoking the plugin
     | project d_seconds = Duration / 1s // Projecting only a subset of the necessary columns
@@ -141,15 +151,14 @@ print "This is an example for using 'external_artifacts'"
       Query Editor shortcuts.
 * To avoid conflicts between Kusto string delimiters and Python string literals, we recommend using single quote characters (`'`) for Kusto string 
   literals in Kusto queries, and double quote characters (`"`) for Python string literals in Python scripts.
-* Use the [externaldata operator](externaldata-operator.md) to obtain the content of a script that you've stored in an external location, such as Azure Blob storage or a public GitHub repository.
+* Use the [externaldata operator](externaldata-operator.md) to obtain the content of a script that you've stored in an external location, such as Azure Blob storage.
   
     **Example**
 
-    <!-- csl -->
-    ```    
+    ```kusto
     let script = 
         externaldata(script:string)
-        [h'https://raw.githubusercontent.com/yonileibowitz/kusto.blog/master/resources/python/sample_script.py']
+        [h'https://kustoscriptsamples.blob.core.windows.net/samples/python/sample_script.py']
         with(format = raw);
     range x from 1 to 360 step 1
     | evaluate python(
@@ -171,14 +180,13 @@ You can install packages by following these steps:
 1. One-time prerequisite:
   
   a. Create a blob container to host the package(s), preferably at the same region as your cluster.
-    * For example: https://artifcatswestus.blob.core.windows.net/python (assuming your cluster is in West US)
+    * For example: `https://artifcatswestus.blob.core.windows.net/python` (assuming your cluster is in West US)
   
   b. Alter the cluster's [Callout policy](../management/calloutpolicy.md) to allow accessing that location.
     * This requires [AllDatabasesAdmin](../management/access-control/role-based-authorization.md) permissions.
-    * For example, to enable access to a blob located in https://artifcatswestus.blob.core.windows.net/python, the command to run is:
+    * For example, to enable access to a blob located in `https://artifcatswestus.blob.core.windows.net/python`, the command to run is:
 
-      <!-- csl -->
-      ```
+      ```kusto
       .alter-merge cluster policy callout @'[ { "CalloutType": "sandbox_artifacts", "CalloutUriRegex": "artifcatswestus\\.blob\\.core\\.windows\\.net/python/","CanCall": true } ]'
       ```
 
@@ -208,8 +216,7 @@ You can install packages by following these steps:
 
 Installing the [Faker](https://pypi.org/project/Faker/) package that generates fake data:
 
-<!-- csl -->
-```
+```kusto
 range Id from 1 to 3 step 1 
 | extend Name=''
 | evaluate python(typeof(*),
@@ -235,6 +242,6 @@ range Id from 1 to 3 step 1
 
 ::: zone pivot="azuremonitor"
 
-This isn't supported in Azure Monitor
+This capability isn't supported in Azure Monitor
 
 ::: zone-end
